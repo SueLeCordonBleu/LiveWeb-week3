@@ -1,0 +1,174 @@
+<html>
+	<head>
+		<script src="/socket.io/socket.io.js"></script>
+		<script>
+
+				var canvas;
+				var context;
+				var batLength = 80;
+				var tableWidth = 800;
+				var tableHeight = 500;
+				var myRole = 0;
+
+				// an array to hold playerBat coordinates.
+				var playerBats = [];
+				for (let i = 0; i<4; i++) {
+					let playerBat = new Object();
+					playerBat.edge = Math.floor(i/2);
+					playerBat.x = 100;
+					playerBat.role = i;
+					playerBats.push(playerBat);
+					//console.log(playerBats);
+				}
+
+				var ball = {
+					x:0,
+					y:0,
+					vx:0,
+					vy:0
+				}
+
+
+			var socket = io.connect();
+			socket.on('connect', function() {
+				console.log("Connected");
+			});
+
+			//update data structure: {myRole:n, batPos:[{edge:n, x:x}, {edge:n, x:x}, {edge:n, x:x}, {edge:n, x:x}], ballPos:{x:x, y:y}}
+			socket.on('update', function(data) {
+				//console.log(data);
+				myRole = data.myRole;
+				for (let i = 0; i < 4; i++) {
+					playerBats[i].edge = data.batPos[i].edge;
+					playerBats[i].x = data.batPos[i].x;
+				}
+				ball.x = data.ballPos.x;
+				ball.y = data.ballPos.y;
+			});
+
+			socket.on('playerNumAlert', function() {
+				alert('We need 4 players in order to start!');
+			});
+
+     window.addEventListener('load', function() {
+				setUpCanvas();
+				draw();
+     });
+
+		 function setUpCanvas(){
+			 canvas = document.getElementById('gameCanvas');
+			 context = canvas.getContext('2d');
+			 //background
+			 context.fillStyle="#FED000";
+			 context.fillRect(0,0,canvas.width,canvas.height);
+
+
+
+		 }
+
+		 function draw(){
+			 canvas = document.getElementById('gameCanvas');
+			 context = canvas.getContext('2d');
+			 //background
+			 context.fillStyle="#FED000";
+			 context.fillRect(0,0,canvas.width,canvas.height);
+
+			 //header
+			 context.fillStyle="#FFFFFF";
+			 context.fillRect(canvas.width/2-175,15,350,50);
+			 context.strokeStyle = '#000000';
+			 context.strokeRect(canvas.width/2-170,10,350,50);
+
+			 context.font = "28px Arial";
+			 context.textAlign = "center";
+			 context.fillStyle = '#EC507f';
+			 context.fillText("ROTATING PING PONG", canvas.width/2, 50);
+			 context.strokeText("ROTATING PING PONG", canvas.width/2, 50);
+
+			 //instruction
+			 context.font = "16px Comic Sans MS";
+			 context.fillStyle = "#000000";
+			 context.fillText("Use \'up arrow\' and \'down arrow\' to control your paddle. \r\n Press \'space\' to restart.", canvas.width/2, canvas.height-25);
+
+			 //ping-pang table / background
+			 context.fillStyle = '#10223E';
+			 context.fillRect((canvas.width-tableWidth)/2, (canvas.height-tableHeight)/2, tableWidth, tableHeight);
+
+			 //ping-pang ball
+			 context.fillStyle = '#FED000';
+			 context.fillRect((canvas.width-tableWidth)/2+ball.x, (canvas.height-tableHeight)/2+ball.y, 10,10);
+			 //*****If I use the following two lines, every frame of the ball woule be kept on the canvas:
+			 //context.arc((canvas.width-tableWidth)/2+10+ball.x, (canvas.height-tableHeight)/2+10+ball.y,10,0,Math.PI * 2,1);
+			 //context.fill();
+
+			 //bats
+			 //****On the other hand, rects behave normal, appears to be animated.
+			 context.fillStyle = '#EC507f';
+			 for (let i = 0; i<4; i++) {
+				 if (playerBats[i].edge == 0) {
+					 if (i == myRole) {
+						 context.fillStyle = '#00BFB3';
+						 context.fillRect ((canvas.width-tableWidth)/2, (canvas.height-tableHeight)/2+playerBats[i].x, 10, batLength);
+
+						 context.fillStyle = '#FFFFFF';
+						 context.strokeStyle = '#00BFB3';
+						 context.fillRect((canvas.width-tableWidth)/2 - 100, (canvas.height-tableHeight)/2+playerBats[i].x+20, 60, 40);
+						 context.strokeRect((canvas.width-tableWidth)/2 - 100, (canvas.height-tableHeight)/2+playerBats[i].x+20, 60, 40);
+						 context.font = "16px Comic Sans MS";
+						 context.fillStyle = '#000000';
+						 context.fillText("Me", (canvas.width-tableWidth)/2 - 100+30, (canvas.height-tableHeight)/2+playerBats[i].x+45);
+					 } else {
+						 context.fillStyle = '#EC507f';
+						 context.fillRect ((canvas.width-tableWidth)/2, (canvas.height-tableHeight)/2+playerBats[i].x, 10, batLength);
+						 // context.font = "16px Comic Sans MS";
+						 // context.fillText("Player", (canvas.width-tableWidth)/2 - 100+30, (canvas.height-tableHeight)/2+playerBats[i].x+25);
+					 }
+				 } else if (playerBats[i].edge == 1) {
+					 if (i == myRole) {
+						 context.fillStyle = '#00BFB3';
+						 context.fillRect ((canvas.width+tableWidth)/2-10, (canvas.height-tableHeight)/2+playerBats[i].x, 10, batLength);
+
+						 context.fillStyle = '#FFFFFF';
+						 context.strokeStyle = '#00BFB3';
+						 context.fillRect((canvas.width+tableWidth)/2 + 100-60, (canvas.height-tableHeight)/2+playerBats[i].x+20, 60, 40);
+						 context.strokeRect((canvas.width+tableWidth)/2 + 100-60, (canvas.height-tableHeight)/2+playerBats[i].x+20, 60, 40);
+						 context.font = "16px Comic Sans MS";
+						 context.fillStyle = '#00BFB3';
+						 context.fillText("Me", (canvas.width+tableWidth)/2 + 100-60+30, (canvas.height-tableHeight)/2+playerBats[i].x+45);
+
+					 } else {
+						 context.fillStyle = '#EC507f';
+						 context.fillRect ((canvas.width+tableWidth)/2-10, (canvas.height-tableHeight)/2+playerBats[i].x, 10, batLength);
+						 // context.font = "16px Comic Sans MS";
+						 // context.fillText("player", (canvas.width+tableWidth)/2 + 100-60+30, (canvas.height-tableHeight)/2+playerBats[i].x+25);
+					 }
+				 }
+
+			 }
+		 }
+		 setInterval(draw,1000/30);
+
+		 document.addEventListener('keydown', logKey);
+		 function logKey(e) {
+			  //console.log(e.key);
+				if (e.key == "ArrowUp") {
+					socket.emit('moveUp', myRole);
+					console.log ("moveUp");
+				} else if (e.key == 'ArrowDown') {
+					socket.emit('moveDown', myRole);
+					console.log ('moveDown');
+				} else if (e.key == ' ') {
+					socket.emit('restart');
+				 	console.log ('restart');
+			  }
+			}
+
+
+		</script>
+	</head>
+	<body>
+		<div>
+			<canvas width="1268" height="640" id="gameCanvas" />
+		</div>
+	</body>
+</html>
